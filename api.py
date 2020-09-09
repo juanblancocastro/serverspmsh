@@ -19,10 +19,14 @@ def inserting():
     body = request.get_json()
     entity_returned = Devices().insert_doc(body)
 
-    bot_url = 'https://api.telegram.org/bot{0}/sendMessage?chat_id=85806317&text=Probando'
+    chat_id = 'https://api.telegram.org/bot{0}/sendMessage?chat_id=85806317&text=Probando'
+    message = ''
 
     requests.post(
-        url='https://api.telegram.org/bot{0}/{1}'.format(token, method),
+        url='https://api.telegram.org/bot{0}/'
+            'sendMessage{1}?chat_id={2}&text={3}'.format(BOT_TOKEN,
+                                                         chat_id,
+                                                         message),
         data={'chat_id': 12345, 'text': 'hello friend'}
     ).json()
 

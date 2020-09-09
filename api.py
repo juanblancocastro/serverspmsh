@@ -22,14 +22,10 @@ def inserting():
     message = ''
 
     requests.post(
-        url='https://api.telegram.org/bot{0}/' +
-            'sendMessage?chat_id={1}&text={2}'.format(BOT_TOKEN,
-                                                      chat_id,
-                                                      message),
-        data={'chat_id': 12345, 'text': 'hello friend'}
+        url='https://api.telegram.org/bot{0}/sendMessage',
+        data={'chat_id': chat_id, 'text': message}
     ).json()
 
-    'https://api.telegram.org/bot{}/sendMessage?chat_id=<group chat id >&text=<our text>'
     return jsonify(mongo_objectid_encoder(entity_returned))
 
 

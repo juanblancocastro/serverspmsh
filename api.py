@@ -8,7 +8,6 @@ app = Flask(__name__)
 BOT_TOKEN = '1302499196:AAGUtabUlDEk5Wusd1zJp8texO5r4iQLK0A'
 
 
-# Create a URL route in our application for "/"
 @app.route('/insertDevice', methods=['POST'])
 def inserting():
     """
@@ -23,10 +22,10 @@ def inserting():
     message = ''
 
     requests.post(
-        url='https://api.telegram.org/bot{0}/'
-            'sendMessage{1}?chat_id={2}&text={3}'.format(BOT_TOKEN,
-                                                         chat_id,
-                                                         message),
+        url='https://api.telegram.org/bot{0}/' +
+            'sendMessage?chat_id={1}&text={2}'.format(BOT_TOKEN,
+                                                      chat_id,
+                                                      message),
         data={'chat_id': 12345, 'text': 'hello friend'}
     ).json()
 

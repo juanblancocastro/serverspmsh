@@ -8,6 +8,8 @@ verify_ssl = true
 [packages]
 pymongo = {extras = ["srv"], version = "*"}
 flask = "*"
+requests = "*"
+python-telegram-bot = "*"
 
 [requires]
 python_version = "3.8"

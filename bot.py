@@ -1,8 +1,9 @@
-
+import os
 import logging
 
-from src.models.devices import Devices
 from bson import ObjectId
+from dotenv import load_dotenv, find_dotenv
+from src.models.devices import Devices
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
@@ -11,7 +12,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_TOKEN = '1302499196:AAGUtabUlDEk5Wusd1zJp8texO5r4iQLK0A'
+load_dotenv(find_dotenv())
 
 
 def start(update, context):
@@ -61,7 +62,9 @@ def main():
     # Create the Updater and pass it your bot's token.
     # Make sure to set use_context=True to use the new context based callbacks
     # Post version 12 this will no longer be necessary
-    updater = Updater(BOT_TOKEN, use_context=True)
+
+    bot_token = os.getenv('BOT_TOKEN')
+    updater = Updater(bot_token, use_context=True)
 
     updater.dispatcher.add_handler(CommandHandler('start', start))
     updater.dispatcher.add_handler(CallbackQueryHandler(button))

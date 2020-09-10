@@ -1,3 +1,5 @@
+import os
+
 from pymongo import MongoClient
 
 
@@ -11,9 +13,11 @@ class MongoModel:
 
     _collection = None
 
-    _url = 'mongodb+srv://blancasdelmol:blancasdelmol@testingjuan.ed9pu.mongodb.net/'
+    _url = ''
 
     def __init__(self):
+
+        self._url = os.getenv('MONGODB_URI')
 
         if self._connection is None:
             self._connection = MongoClient(self._url)

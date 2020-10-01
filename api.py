@@ -1,12 +1,13 @@
-import requests
-import datetime
+from datetime import datetime
 
 from dotenv import load_dotenv, find_dotenv
 from flask import Flask, request, jsonify
+from bson import ObjectId
 
 from src.models.devices import Devices
 from src.models.consumptions import Consumptions
-from src.utils import mongo_objectid_encoder
+from src.models.users import Users
+from src.utils import mongo_objectid_encoder, send_manual_message
 
 app = Flask(__name__)
 load_dotenv(find_dotenv())
@@ -22,14 +23,6 @@ def insert_device():
     body = request.get_json()
     entity_returned = Devices().insert_doc(body)
 
-    # chat_id = 'https://api.telegram.org/bot{0}/sendMessage?chat_id=85806317&text=Probando'
-    # message = ''
-    #
-    # requests.post(
-    #     url='https://api.telegram.org/bot{0}/sendMessage',
-    #     data={'chat_id': chat_id, 'text': message}
-    # ).json()
-
     return jsonify(mongo_objectid_encoder(entity_returned))
 
 
@@ -42,17 +35,35 @@ def insert_consumption():
     """
     body = request.get_json()
 
-    timestamp = datetime.datetime.now()
+    timestamp = datetime.now()
     body['timestamp'] = timestamp
+    body['deviceId'] = ObjectId(body['deviceId'])
     entity_returned = Consumptions().insert_doc(body)
 
-    # chat_id = 'https://api.telegram.org/bot{0}/sendMessage?chat_id=85806317&text=Probando'
-    # message = ''
-    #
-    # requests.post(
-    #     url='https://api.telegram.org/bot{0}/sendMessage',
-    #     data={'chat_id': chat_id, 'text': message}
-    # ).json()
+    device_id = body['deviceId']
+
+    query_db = {
+        'deviceId': device_id
+    }
+    consumptions = Consumptions().get_docs_by_query(query_db)
+
+    last_ten_avg = sum([doc['amperage'] for doc in consumptions[:10]]) / 10
+
+    if abs(last_ten_avg - body['amperage']) > 0.017:
+        query_db = {
+            '_id': ObjectId(device_id)
+        }
+        device_data = Devices().get_one_doc(query_db)
+        spmsh_user_id = device_data['userId']
+
+        query_db = {
+            '_id': spmsh_user_id
+        }
+        spmsh_user_data = Users().get_one_doc(query_db)
+        user_chat_id = spmsh_user_data['chatId']
+        send_text = '\U0001F6A8 ¡Alerta! Ponerse en contacto con ' \
+                    + device_data['address']
+        send_manual_message(user_chat_id, send_text)
 
     return jsonify(mongo_objectid_encoder(entity_returned))
 

@@ -2,8 +2,11 @@ import os
 import logging
 
 from bson import ObjectId
+from datetime import datetime, timedelta
 from dotenv import load_dotenv, find_dotenv
 from src.models.devices import Devices
+from src.models.consumptions import Consumptions
+from src.models.users import Users
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
@@ -16,36 +19,52 @@ load_dotenv(find_dotenv())
 
 
 def start(update, context):
-    keyboard = [[InlineKeyboardButton("Option 1", callback_data='1'),
-                 InlineKeyboardButton("Option 2", callback_data='2')],
-
-                [InlineKeyboardButton("Option 3", callback_data='3')]]
+    keyboard = [[InlineKeyboardButton("\U0001F4A1 Datos de consumo", callback_data='1')]]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    update.message.reply_text('Please choose:', reply_markup=reply_markup)
+    update.message.reply_text('Seleccionar:', reply_markup=reply_markup)
 
 
 def button(update, context):
     query = update.callback_query
 
-    # CallbackQueries need to be answered, even if no notification to the user is needed
-    # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
     query.answer()
 
     if query.data == '3':
         device = Devices().get_one_doc({'_id': ObjectId('5f59162308a2e0adcdcad4e2')})
         query.edit_message_text(text="Dispositivo: {}".format(device['campoDePrueba']))
 
-    elif query.data == '2':
-        send_text = 'Datos consumo día de hoy para \n' \
-                    'dispositivo 5213098123098: \n' \
-                    'Potencia: 543W \n' \
-                    'Intensidad: 34A'
+    elif query.data == '1':
+        user_chat_id = query.from_user.id
+        query_db = {
+            'chatId': user_chat_id
+        }
+        spmsh_user_data = Users().get_one_doc(query_db)
+        spmsh_user_id = spmsh_user_data['_id']
+
+        query_db = {
+            'userId': spmsh_user_id
+        }
+        device_data = Devices().get_one_doc(query_db)
+        device_id = device_data['_id']
+
+        query_db = {
+            'deviceId': device_id
+        }
+
+        consumptions = Consumptions().get_docs_by_query(query_db)
+
+        consumptions = [doc for doc in consumptions if doc['timestamp'] > datetime.now() - timedelta(days=2)]
+        avg_consumptions = sum([doc['amperage'] for doc in consumptions]) / len(consumptions)
+
+        send_text = 'Datos consumo medio de hoy y de ayer para el ' \
+                    'dispositivo de ' + device_data['address'] + ': \n' \
+                    'Intensidad media: ' + str(avg_consumptions) + ' Amperios'
 
         query.edit_message_text(text=send_text)
 
-    elif query.data == '1':
+    elif query.data == '2':
         send_text = '\U0001F6A8 ¡Alerta! Ponerse en contacto con' \
                     'dirección: C/ Toro 65, 2ºC      '
         query.edit_message_text(text=send_text)
@@ -59,10 +78,6 @@ def help_command(update, context):
 
 
 def main():
-    # Create the Updater and pass it your bot's token.
-    # Make sure to set use_context=True to use the new context based callbacks
-    # Post version 12 this will no longer be necessary
-
     bot_token = os.getenv('BOT_TOKEN')
     updater = Updater(bot_token, use_context=True)
 
@@ -70,11 +85,8 @@ def main():
     updater.dispatcher.add_handler(CallbackQueryHandler(button))
     updater.dispatcher.add_handler(CommandHandler('help', help_command))
 
-    # Start the Bot
     updater.start_polling()
 
-    # Run the bot until the user presses Ctrl-C or the process receives SIGINT,
-    # SIGTERM or SIGABRT
     updater.idle()
 
 

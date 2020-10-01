@@ -1,6 +1,6 @@
 import os
 
-from pymongo import MongoClient
+from pymongo import MongoClient, DESCENDING
 
 
 class MongoModel:
@@ -48,5 +48,20 @@ class MongoModel:
         doc = self._collection.find_one(query)
 
         return doc
+
+    def get_docs_by_query(self, query: dict):
+        """Finds all docd by given query
+
+        :param query:
+        :return:
+        """
+
+        cursor = self._collection.find(query).sort('_id', DESCENDING)
+        docs = []
+
+        for doc in cursor:
+            docs.append(doc)
+
+        return docs
 
 
